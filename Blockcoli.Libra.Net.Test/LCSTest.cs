@@ -307,6 +307,7 @@ namespace Blockcoli.Libra.Net.Test
                 },
                 MaxGasAmount = 10000UL,
                 GasUnitPrice = 20000UL,
+                GasCurrencyCode = "LBR",
                 ExpirationTime = 86400UL
             };   
             var actual = LCSCore.LCSDeserialization(transaction).ByteArrayToString();
@@ -358,6 +359,7 @@ namespace Blockcoli.Libra.Net.Test
                 },
                 MaxGasAmount = 0UL,
                 GasUnitPrice = 0UL,
+                GasCurrencyCode = "LBR",
                 ExpirationTime = 18446744073709551615UL
             };   
             var actual = LCSCore.LCSDeserialization(transaction).ByteArrayToString();

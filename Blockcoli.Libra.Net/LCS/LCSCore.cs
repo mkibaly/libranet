@@ -112,85 +112,80 @@ namespace Blockcoli.Libra.Net.LCS
         /// Libra Canonical Deserialization
         /// </summary>
         /// <returns></returns>
-        public static byte[] LCSDeserialization(object source)
+        public static byte[] LCSDeserialization(ulong source)
         {
-            var type = source.GetType();
-            if (type == typeof(AddressLCS))
-            {
-                return _deserialization.AddressToByte((AddressLCS)source);
-            }
-            else if (type == typeof(ulong))
-            {
-                return _deserialization.U64ToByte((ulong)source);
-            }
-            else if (type == typeof(uint))
-            {
-                return _deserialization.U32ToByte((uint)source);
-            }
-            else if (type == typeof(string))
-            {
-                return _deserialization.StringToByte((string)source);
-            }
-            else if (type == typeof(byte[]))
-            {
-                return _deserialization.ByteArrayToByte((byte[])source);
-            }
-            else if (type == typeof(List<byte[]>))
-            {
-                return _deserialization.ListByteArrayToByte((List<byte[]>)source);
-            }
-            else if (type == typeof(bool))
-            {
-                return _deserialization.BoolToByte((bool)source);
-            }
-            else if (type == typeof(TransactionPayloadLCS))
-            {
-                return _deserialization.TransactionPayloadToByte((TransactionPayloadLCS)source);
-            }
-            else if (type == typeof(ProgramLCS))
-            {
-                return _deserialization.ProgramToByte((ProgramLCS)source);
-            }
-            else if (type == typeof(ScriptLCS))
-            {
-                return _deserialization.ScriptToByte((ScriptLCS)source);
-            }
-            else if (type == typeof(ModuleLCS))
-            {
-                return _deserialization.ModuleToByte((ModuleLCS)source);
-            }
-            else if (type == typeof(TransactionArgumentLCS))
-            {
-                return _deserialization.TransactionArgumentToByte((TransactionArgumentLCS)source);
-            }
-            else if (type == typeof(List<TransactionArgumentLCS>))
-            {
-                return _deserialization.ListTransactionArgumentToByte((List<TransactionArgumentLCS>)source);
-            }
-            else if (type == typeof(AccessPathLCS))
-            {
-                return _deserialization.AccessPathToByte((AccessPathLCS)source);
-            }
-            else if (type == typeof(WriteOpLCS))
-            {
-                return _deserialization.WriteOpToByte((WriteOpLCS)source);
-            }
-            else if (type == typeof(WriteSetLCS))
-            {
-                return _deserialization.WriteSetToByte((WriteSetLCS)source);
-            }
-            else if (type == typeof(RawTransactionLCS))
-            {
-                return _deserialization.RawTransactionToByte((RawTransactionLCS)source);
-            }
-
-            return null;
+            return _deserialization.ToByte(source);
         }
 
-        //public static byte[] LCDeserialization(AddressLCS source)
-        //{
-        //    return _deserialization.U64ToByte(source);
-        //}
+        public static byte[] LCSDeserialization(uint source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(string source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(byte[] source)
+        {
+            return _deserialization.ToByte(source);
+        }
+
+        public static byte[] LCSDeserialization(List<byte[]> source)
+        {
+            return _deserialization.ToByte(source);
+        }
+
+        public static byte[] LCSDeserialization(bool source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(TransactionPayloadLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+
+        public static byte[] LCSDeserialization(ProgramLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(ScriptLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(ModuleLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(TransactionArgumentLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(List<TransactionArgumentLCS> source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(AccessPathLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(WriteOpLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(WriteSetLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+        public static byte[] LCSDeserialization(RawTransactionLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+
+        public static byte[] LCSDeserialization(AddressLCS source)
+        {
+            return _deserialization.ToByte(source);
+        }
+
 
         #endregion
     }

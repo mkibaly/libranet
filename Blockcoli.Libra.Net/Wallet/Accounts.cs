@@ -6,6 +6,8 @@ namespace Blockcoli.Libra.Net.Wallet
 {
     public class Account
     {
+
+        public string AuthKey { get; private set; }
         public string Address { get; private set; }
         public Edwards25519 KeyPair { get; private set; }    
 
@@ -24,7 +26,8 @@ namespace Blockcoli.Libra.Net.Wallet
         public Account(Edwards25519 keyPair)
         {
             this.KeyPair = keyPair;
-            this.Address = new SHA3_256().ComputeVariable(this.KeyPair.PublicKey).ToHexString();
+            this.AuthKey = new SHA3_256().ComputeVariable(this.KeyPair.PublicKey).ToHexString();
+            this.Address = AuthKey.Substring(32);
         }
     }
 }

@@ -65,10 +65,10 @@ namespace Blockcoli.Libra.Net.Sample
 						else Console.WriteLine("Invalid address.");
 						break;
 					case "6":
-						var accountStates = await client.QueryBalances(wallet.Accounts.Values.Select(a => a.Address).ToArray());
-						accountStates.ForEach(accountState => {
-							Console.WriteLine($"{(double)accountState.Balance / 1000000}");
-						});
+						//var accountStates = await client.QueryBalances(wallet.Accounts.Values.Select(a => a.Address).ToArray());
+						//accountStates.ForEach(accountState => {
+						//	Console.WriteLine($"{(double)accountState.Balance / 1000000}");
+						//});
 						break;
 					case "7":
 						Console.Write("Sender Address = ");
@@ -77,15 +77,17 @@ namespace Blockcoli.Libra.Net.Sample
 						{
 							Console.Write("Recipient Address = ");
 							var recipientAddress = Console.ReadLine();
-							Console.Write("Amount (LIB) = ");
+							Console.Write("Amount = ");
 							var amount = ulong.Parse(Console.ReadLine()) * 1000000;
+							Console.Write("Curency (LBR) = ");
+							var curency = Console.ReadLine();
 							Console.Write("Gas Unit Price (0) = ");
 							var input = Console.ReadLine();
 							var gasUnitPrice = string.IsNullOrEmpty(input) ? 0UL : ulong.Parse(input);
 							Console.Write("Max Gas Amount (1000000) = ");
 							input = Console.ReadLine();
 							var maxGasAmount = string.IsNullOrEmpty(input) ? 1000000UL : ulong.Parse(input);
-							var isAccepted = await client.TransferCoins(wallet.Accounts[sender], recipientAddress, amount, gasUnitPrice, maxGasAmount);
+							var isAccepted = await client.TransferCoins(wallet.Accounts[sender], recipientAddress, amount, curency, gasUnitPrice, maxGasAmount);
 							Console.WriteLine($"Accepted: {isAccepted}");
 						}
 						else Console.WriteLine("Invalid address.");

@@ -248,7 +248,7 @@ mint | mintb | m | mb <receiver_account_ref_id>|<receiver_account_address> <numb
             string address;
             try
             {
-                address = GetAddressOrIndex(cmd[2]);
+                address = GetAuthKeyForIndex(cmd[2]);
             }
             catch (Exception ex)
             {
@@ -261,10 +261,16 @@ mint | mintb | m | mb <receiver_account_ref_id>|<receiver_account_address> <numb
             {
                 Console.WriteLine("[ERROR] Error minting coins: Invalid decimal: unknown character");
                 return;
-            }            
-            
+            }
+            try
+            {
             var resultAmount = await client.MintWithFaucetService(address, amount);
             Console.WriteLine($"Mint request submitted - {resultAmount}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: - {ex.Message}");
+            }
         }
 
         private string GetAddressOrIndex(string addressOrIndex)
@@ -278,6 +284,23 @@ mint | mintb | m | mb <receiver_account_ref_id>|<receiver_account_address> <numb
                     throw new Exception("[ERROR] Error minting coins: Unable to find account by account reference id: 0, to see all existing accounts, run: 'account list'");
                 }
                 address = wallet.Accounts.ElementAt(index).Value.Address;
+            }
+            else address = addressOrIndex;
+
+            return address;
+        }
+
+        private string GetAuthKeyForIndex(string addressOrIndex)
+        {
+            string address;
+            int index;
+            if (int.TryParse(addressOrIndex, out index))
+            {
+                if (wallet.Accounts.Count < index + 1)
+                {
+                    throw new Exception("[ERROR] Error minting coins: Unable to find account by account reference id: 0, to see all existing accounts, run: 'account list'");
+                }
+                address = wallet.Accounts.ElementAt(index).Value.AuthKey;
             }
             else address = addressOrIndex;
 
@@ -361,9 +384,10 @@ event | ev <account_ref_id>|<account_address> <sent|received> <start_sequence_nu
 
             try
             {
-                var state = await client.QueryBalance(address);
-                Console.WriteLine($"Sequence Number: {state.SequenceNumber}");
-                Console.WriteLine($"Balance is: {(double)state.Balance/1000000:N6}");
+                var state =  await client.QueryBalanceAsync(address);
+                Console.WriteLine($"Account state: {state}");
+                //Console.WriteLine($"Sequence Number: {state.SequenceNumber}");
+                //Console.WriteLine($"Balance is: {(double)state.Balance/1000000:N6}");
             }
             catch (Exception ex)
             {
@@ -379,7 +403,7 @@ event | ev <account_ref_id>|<account_address> <sent|received> <start_sequence_nu
                 return;
             }
 
-            if (cmd.Length < 4) 
+            if (cmd.Length < 5) 
             {
                 Console.WriteLine("Invalid number of arguments for transfer");
                 TransferHelp();
@@ -389,14 +413,15 @@ event | ev <account_ref_id>|<account_address> <sent|received> <start_sequence_nu
             var senderAddress = GetAddressOrIndex(cmd[1]);
             var receiverAddress = GetAddressOrIndex(cmd[2]);
             var amount = ulong.Parse(cmd[3]);
+            var currency = cmd[4];
             var gasUnitPrice = 0UL;
             var maxGasAmount = 100000UL;
-            if (senderAddress.Length == 5) gasUnitPrice = ulong.Parse(cmd[4]);
-            if (senderAddress.Length == 6) maxGasAmount = ulong.Parse(cmd[5]);
+            if (senderAddress.Length == 5) gasUnitPrice = ulong.Parse(cmd[5]);
+            if (senderAddress.Length == 6) maxGasAmount = ulong.Parse(cmd[6]);
 
             try
             {
-                var isAccepted = await client.TransferCoins(wallet.Accounts[senderAddress], receiverAddress, amount, gasUnitPrice, maxGasAmount);
+                var isAccepted = await client.TransferCoins(wallet.Accounts[senderAddress], receiverAddress, amount, currency, gasUnitPrice, maxGasAmount);
                 Console.WriteLine($"AC Accepted: {isAccepted}"); 
             }
             catch (Exception ex)

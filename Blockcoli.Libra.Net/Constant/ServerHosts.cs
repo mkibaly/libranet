@@ -4,5 +4,6 @@ namespace Blockcoli.Libra.Net.Constant
     {
         public static string TestnetFaucet => "faucet.testnet.libra.org";
         public static string TestnetAdmissionControl => "ac.testnet.libra.org";
+        public static string EndPointUrl => "https://client.testnet.libra.org";
     }
 }

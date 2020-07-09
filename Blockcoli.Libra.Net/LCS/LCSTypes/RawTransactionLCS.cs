@@ -12,6 +12,7 @@ namespace Blockcoli.Libra.Net.LCS
     {
         public ulong MaxGasAmount { get; set; }
         public ulong GasUnitPrice { get; set; }
+        public string GasCurrencyCode { get; set; }
         public ulong ExpirationTime { get; set; }
         public AddressLCS Sender { get; set; }
         public ulong SequenceNumber { get; set; }
@@ -24,6 +25,7 @@ namespace Blockcoli.Libra.Net.LCS
             retStr += string.Format("payload: {0},{1}", TransactionPayload, Environment.NewLine);
             retStr += string.Format("max_gas_amount: {0},{1}", MaxGasAmount, Environment.NewLine);
             retStr += string.Format("gas_unit_price: {0},{1}", GasUnitPrice, Environment.NewLine);
+            retStr += string.Format("gas_currency_code: {0},{1}", GasCurrencyCode, Environment.NewLine);
             retStr += string.Format("expiration_time: {0} seconds", ExpirationTime) + "}";
             return retStr;
         }

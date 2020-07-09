@@ -35,12 +35,14 @@ namespace Blockcoli.Libra.Net.LCS
 
             retVal.Sender = source.LCSerialization<AddressLCS>(ref cursor);
             retVal.SequenceNumber = source.LCSerialization<ulong>(ref cursor);
-            retVal.TransactionPayload =
-                source.LCSerialization<TransactionPayloadLCS>(ref cursor);
             retVal.MaxGasAmount = Read_u64(source, ref cursor);
             retVal.GasUnitPrice = Read_u64(source, ref cursor);
+            retVal.GasCurrencyCode = Read_String(source, ref cursor, 3);
             retVal.ExpirationTime = Read_u64(source, ref cursor);
 
+            retVal.TransactionPayload =
+                source.LCSerialization<TransactionPayloadLCS>(ref cursor);
+            
             return retVal;
         }
 
