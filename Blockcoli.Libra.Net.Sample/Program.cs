@@ -88,7 +88,7 @@ namespace Blockcoli.Libra.Net.Sample
 							input = Console.ReadLine();
 							var maxGasAmount = string.IsNullOrEmpty(input) ? 1000000UL : ulong.Parse(input);
 							var isAccepted = await client.TransferCoins(wallet.Accounts[sender], recipientAddress, amount, curency, gasUnitPrice, maxGasAmount);
-							Console.WriteLine($"Accepted: {isAccepted}");
+							Console.WriteLine($"Accepted: {string.IsNullOrEmpty(isAccepted)}");
 						}
 						else Console.WriteLine("Invalid address.");
 						break;

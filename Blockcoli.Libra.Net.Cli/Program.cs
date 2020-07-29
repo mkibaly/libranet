@@ -385,9 +385,12 @@ event | ev <account_ref_id>|<account_address> <sent|received> <start_sequence_nu
             try
             {
                 var state =  await client.QueryBalanceAsync(address);
-                Console.WriteLine($"Account state: {state}");
-                //Console.WriteLine($"Sequence Number: {state.SequenceNumber}");
-                //Console.WriteLine($"Balance is: {(double)state.Balance/1000000:N6}");
+                //Console.WriteLine($"Account state: {state}");
+                Console.WriteLine($"Sequence Number: {state.sequence_number}");
+                foreach (var balance in state.balances)
+                {
+                    Console.WriteLine($"Balance is: {(double)balance.amount/1000000:N6} {balance.currency}");
+                }
             }
             catch (Exception ex)
             {
@@ -422,7 +425,7 @@ event | ev <account_ref_id>|<account_address> <sent|received> <start_sequence_nu
             try
             {
                 var isAccepted = await client.TransferCoins(wallet.Accounts[senderAddress], receiverAddress, amount, currency, gasUnitPrice, maxGasAmount);
-                Console.WriteLine($"AC Accepted: {isAccepted}"); 
+                Console.WriteLine($"AC Accepted: {string.IsNullOrEmpty(isAccepted)}"); 
             }
             catch (Exception ex)
             {

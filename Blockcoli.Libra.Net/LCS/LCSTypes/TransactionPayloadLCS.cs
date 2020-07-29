@@ -43,20 +43,23 @@ namespace Blockcoli.Libra.Net.LCS
             return new TransactionPayloadLCS
             {
                 PayloadType = TransactionPayloadType.Program,
-                Program = program                    
+                Program = program
             };
         }
 
         public static TransactionPayloadLCS FromScript(PayloadLCS payloadLCS)
         {
             var script = new ScriptLCS();
+            script.CoinTag = payloadLCS.CoinTag;
+            script.RecipientAddress = payloadLCS.RecipientAddress;
+            script.Amount = payloadLCS.Amount;
             script.Code = payloadLCS.Code;
             script.Modules = payloadLCS.Modules;
             script.TransactionArguments = payloadLCS.TransactionArguments;
             return new TransactionPayloadLCS
             {
                 PayloadType = TransactionPayloadType.Script,
-                Script = script                    
+                Script = script
             };
         }
     }

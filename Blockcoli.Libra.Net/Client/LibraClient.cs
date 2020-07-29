@@ -13,6 +13,7 @@ using Blockcoli.Libra.Net.Common;
 using Blockcoli.Libra.Net.Crypto;
 using Blockcoli.Libra.Net.LCS;
 using Blockcoli.Libra.Net.JsonRPC;
+using Newtonsoft.Json;
 
 namespace Blockcoli.Libra.Net.Client
 {
@@ -70,51 +71,61 @@ namespace Blockcoli.Libra.Net.Client
             var response = await httpClient.PostAsync(url, null);
             if (response.StatusCode != HttpStatusCode.OK) throw new Exception($"Failed to query faucet service. Code: {response.StatusCode}");
             var json = await response.Content.ReadAsStringAsync();
-            var faucetResult = System.Text.Json.JsonSerializer.Deserialize<FaucetResult>(json);
-            if (faucetResult.Status != "1") throw new Exception($"Failed to query faucet service. Message: {faucetResult.Result}");
-            return ulong.Parse(faucetResult.Result);
+            //var faucetResult = System.Text.Json.JsonSerializer.Deserialize<FaucetResult>(json);
+            //if (json != "1") throw new Exception($"Failed to query faucet service. Message: {json}");
+            return ulong.Parse(json);
         }
 
-        public async Task<bool> TransferCoins(Account sender, string receiverAddress, ulong amount, string currency,  ulong gasUnitPrice = 0, ulong maxGasAmount = 1000000)
+        public async Task<string> TransferCoins(Account sender, string receiverAddress, ulong amount, string currency, ulong gasUnitPrice = 0, ulong maxGasAmount = 1000000)
         {
             try
             {
-               //var accountState = await QueryBalance(sender.Address);
+                //var accountState = await QueryBalance(sender.Address);
 
-                var payloadLCS = new PayloadLCS();
-                payloadLCS.Code = Convert.FromBase64String(Constant.ProgamBase64Codes.PeerToPeerTxn);
-                payloadLCS.TransactionArguments = new List<TransactionArgumentLCS>();
-                payloadLCS.TransactionArguments.Add(new TransactionArgumentLCS
-                {
-                    ArgType = TransactionArgument.Types.ArgType.String,
-                    String = currency
-                });
-                payloadLCS.TransactionArguments.Add(new TransactionArgumentLCS
-                {
-                    ArgType = Types.TransactionArgument.Types.ArgType.Address,
-                    Address = new AddressLCS
-                    {
-                        Value = receiverAddress
-                    }
-                });
-                payloadLCS.TransactionArguments.Add(new TransactionArgumentLCS
-                {
-                    ArgType = Types.TransactionArgument.Types.ArgType.U64,
-                    U64 = amount
-                });
+                //var payloadLCS = new PayloadLCS();
+                //payloadLCS.Code = Convert.FromBase64String(Constant.ProgamBase64Codes.PeerToPeerTxn);
+                //payloadLCS.TransactionArguments = new List<TransactionArgumentLCS>();
+                //payloadLCS.TransactionArguments.Add(new TransactionArgumentLCS
+                //{
+                //    ArgType = TransactionArgument.Types.ArgType.String,
+                //    String = currency
+                //});
+                //payloadLCS.TransactionArguments.Add(new TransactionArgumentLCS
+                //{
+                //    ArgType = Types.TransactionArgument.Types.ArgType.Address,
+                //    Address = new AddressLCS
+                //    {
+                //        Value = receiverAddress
+                //    }
+                //});
+                //payloadLCS.TransactionArguments.Add(new TransactionArgumentLCS
+                //{
+                //    ArgType = Types.TransactionArgument.Types.ArgType.U64,
+                //    U64 = amount
+                //});
 
                 var transaction = new RawTransactionLCS
                 {
-                    Sender = new AddressLCS { Value = sender.Address },
                     SequenceNumber = 1,//accountState.SequenceNumber,
-                    TransactionPayload = TransactionPayloadLCS.FromScript(payloadLCS),
                     MaxGasAmount = maxGasAmount,
                     GasUnitPrice = gasUnitPrice,
                     GasCurrencyCode = currency,
-                    ExpirationTime = (ulong)Math.Floor((decimal)DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) + 100
+                    Sender = new AddressLCS { Value = sender.Address },
+                    ExpirationTime = (ulong)Math.Floor((decimal)DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) + 100,
+                    TransactionPayload = TransactionPayloadLCS.FromScript(new ScriptLCS()
+                    {
+                        CoinTag = currency,
+                        RecipientAddress = receiverAddress,
+                        Amount = amount
+                    }),
                 };
 
                 var transactionLCS = LCSCore.LCSDeserialization(transaction);
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(transaction);
+                Console.WriteLine(json);
+                Console.WriteLine(transactionLCS.ToHexString());
+
+
 
                 var digestSHA3 = new SHA3_256();
                 var saltDigest = digestSHA3.ComputeVariable(Constant.HashSaltValues.RawTransactionHashSalt.ToBytes());
@@ -128,8 +139,8 @@ namespace Blockcoli.Libra.Net.Client
                 txnBytes = txnBytes.Concat(sender.PublicKey).ToArray();
                 txnBytes = txnBytes.Concat(signatureLen).ToArray();
                 txnBytes = txnBytes.Concat(senderSignature).ToArray();
-                //Console.WriteLine("sender.PublicKey:", sender.PublicKey.ToHexString());
-                //Console.WriteLine("senderSignature:", senderSignature.ToHexString());
+                Console.WriteLine("sender.PublicKey:", sender.PublicKey.ToHexString());
+                Console.WriteLine("senderSignature:", senderSignature.ToHexString());
 
                 var request = new SubmitTransactionRequest
                 {
@@ -143,15 +154,14 @@ namespace Blockcoli.Libra.Net.Client
 
                 Console.WriteLine("Trns hex:");
                 Console.WriteLine(txnBytes.ToHexString());
-                var json = Newtonsoft.Json.JsonConvert.SerializeObject(transaction);
-                Console.WriteLine(json);
+
                 var response = await rpcClient.CallAsync("submit", txnBytes.ToHexString());
 
                 Console.WriteLine("response:");
                 Console.WriteLine(response);
                 //return response.AcStatus.Code == AdmissionControlStatusCode.Accepted;
                 //todo: check response code
-                return string.IsNullOrEmpty(response);
+                return response;
             }
             catch (Exception ex)
             {
@@ -159,7 +169,15 @@ namespace Blockcoli.Libra.Net.Client
             }
         }
 
-        public async Task<string> QueryBalanceAsync(string address)
+        public async Task<AccountTransactions> GetAccountTransaction(string address, ulong sequence, bool include_events = false)
+        {
+            var jsonResponse = await rpcClient.CallAsync("get_account_transaction", address, sequence, include_events);
+            AccountTransactionsRoot jsonRpc = JsonConvert.DeserializeObject<AccountTransactionsRoot>(jsonResponse);
+
+            return jsonRpc.result;
+        }
+
+        public async Task<QueryBalance> QueryBalanceAsync(string address)
         {
             var request = new UpdateToLatestLedgerRequest();
             var accountStateRequest = new GetAccountStateRequest { Address = address.ToByteString() };
@@ -167,9 +185,10 @@ namespace Blockcoli.Libra.Net.Client
             var requestItem = new RequestItem { GetAccountStateRequest = accountStateRequest };
             request.RequestedItems.Add(requestItem);
 
-            var response = await rpcClient.CallAsync("get_account_state", address);
-            return response;
-            //return DecodeAccountStateBlob(response.ResponseItems.SingleOrDefault().GetAccountStateResponse.AccountStateWithProof.Blob); 
+            var balanceJsonResponse = await rpcClient.CallAsync("get_account", address);
+            JsonRpcRoot jsonRpc = JsonConvert.DeserializeObject<JsonRpcRoot>(balanceJsonResponse);
+
+            return jsonRpc.result;
         }
 
         //public async Task<List<Wallet.AccountState>> QueryBalances(params string[] addresses)

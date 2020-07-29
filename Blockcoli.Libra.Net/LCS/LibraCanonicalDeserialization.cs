@@ -137,31 +137,42 @@ namespace Blockcoli.Libra.Net.LCS
         public byte[] ToByte(RawTransactionLCS source)
         {
             var result = ToByte(source.Sender);
+            
             var sequence = ToByte(source.SequenceNumber);
             result = result.Concat(sequence).ToArray();
-            var max = ToByte(source.MaxGasAmount);
-            result = result.Concat(max).ToArray();
-            var gas = ToByte(source.GasUnitPrice);
-            result = result.Concat(gas).ToArray();
-            var gasCurr = ToByte(source.GasCurrencyCode);
-            result = result.Concat(gasCurr).ToArray();
-            var expire = ToByte(source.ExpirationTime);
-            result = result.Concat(expire).ToArray();
+            
             var payload = ToByte(source.TransactionPayload);
             result = result.Concat(payload).ToArray();
+
+            var max = ToByte(source.MaxGasAmount);
+            result = result.Concat(max).ToArray();
+            
+            var gas = ToByte(source.GasUnitPrice);
+            result = result.Concat(gas).ToArray();
+            
+            var gasCurr = ToByte(source.GasCurrencyCode);
+            result = result.Concat(gasCurr).ToArray();
+            
+            var expire = ToByte(source.ExpirationTime);
+            result = result.Concat(expire).ToArray();
+            
             return result;
         }
 
         public byte[] ToByte(ScriptLCS source)
         {
-            var result = ToByte(source.Code);
-            var argLen = ToByte((uint)source.TransactionArguments.Count);
-            result = result.Concat(argLen).ToArray();
-            foreach (var arg in source.TransactionArguments)
-            {
-                var argData = ToByte(arg);
-                result = result.Concat(argData).ToArray();
-            }
+            var result = ToByte(source.CoinTag);
+            result = result.Concat(ToByte(source.RecipientAddress)).ToArray();
+            result = result.Concat(ToByte(source.Amount)).ToArray();
+
+            //var result = ToByte(source.Code);
+            //var argLen = ToByte((uint)source.TransactionArguments.Count);
+            //result = result.Concat(argLen).ToArray();
+            //foreach (var arg in source.TransactionArguments)
+            //{
+            //    var argData = ToByte(arg);
+            //    result = result.Concat(argData).ToArray();
+            //}
 
             return result;
         }

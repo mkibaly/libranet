@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -17,11 +18,11 @@ namespace Blockcoli.Libra.Net.JsonRPC
             uri = new Uri(url_);
         }
 
-        public async Task<string> CallAsync(string method, string _paramsJson)
+        public async Task<string> CallAsync(string method, params object[] _params)
         {
             using (var client = new HttpClient())
             {
-                var json = ParseRequest(method, _paramsJson);
+                var json = ParseRequest(method, _params);
 
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, uri);
                 request.Content = new StringContent(json, Encoding.UTF8, "application/json");//CONTENT-TYPE header
@@ -33,19 +34,17 @@ namespace Blockcoli.Libra.Net.JsonRPC
             }
         }
 
-        public string ParseRequest(string method, string parm)
+        public string ParseRequest(string method, object[] parm)
         {
             var obj = new
             {
                 jsonrpc = this.jsonrpc,
                 method = method,
-                @params = new string[] { parm },
+                @params = parm,
                 id = 1
             };
 
-            var json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
-
-            return json;
+            return JsonConvert.SerializeObject(obj);
         }
     }
 
