@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Blockcoli.Libra.Net.Api.Models;
 using Blockcoli.Libra.Net.Client;
+using Blockcoli.Libra.Net.SwissKnife;
 using Blockcoli.Libra.Net.Wallet;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.Hosting;
 
 namespace Blockcoli.Libra.Net.Api.Controllers
 {
@@ -18,7 +20,9 @@ namespace Blockcoli.Libra.Net.Api.Controllers
         string serverHost;
         LibraWallet wallet;
         LibraClient client;
-        public AccountController()
+        private readonly IHostEnvironment env;
+
+        public AccountController(IHostEnvironment env)
         {
             LibraNetwork network = LibraNetwork.Testnet;
             this.wallet = new LibraWallet();
@@ -29,18 +33,24 @@ namespace Blockcoli.Libra.Net.Api.Controllers
                     this.serverHost = Constant.ServerHosts.TestnetAdmissionControl;
                     break;
             }
+
+            this.env = env;
         }
 
         // http://localhost:58162/Account/Create
         [HttpGet("Create")]
         public LibraAccount Create()
         {
-            var acc = wallet.NewAccount();
+            SwissKnifeHelper swissKnife = new SwissKnifeHelper(env.ContentRootPath);
+            SwissAccount acc = swissKnife.GenerateTestEd25519Keypair();
+
             var account = new LibraAccount
             {
-                Address = acc.Address,
-                AuthKey = acc.AuthKey,
-                Mnemonic = wallet.Mnemonic.ToString()
+                Address = acc.libra_account_address,
+                AuthKey = acc.libra_auth_key,
+                Mnemonic = acc.private_key,
+                PrivateKey = acc.private_key,
+                PublicKey = acc.public_key
             };
 
             return account;
@@ -101,10 +111,10 @@ namespace Blockcoli.Libra.Net.Api.Controllers
             {
                 var state = await client.QueryBalanceAsync(address);
 
-                var balance = state?.balances?.FirstOrDefault()?.amount ?? ulong.MinValue;
+                var balance = state?.balances?.FirstOrDefault()?.amount ?? 0L;
 
 
-                return Json(balance);
+                return Json(new { balance, sequence= state?.sequence_number});
             }
             catch (Exception ex)
             {
@@ -137,17 +147,26 @@ namespace Blockcoli.Libra.Net.Api.Controllers
             try
             {
                 var trx = await client.GetAccountTransaction(dto.address, dto.sequence_number);
-                var transaction = new Models.Transaction()
+                if (trx != null)
                 {
-                    Id = trx.version,
-                    Amount = trx.transaction.script.amount,
-                    FromAccount = dto.address,
-                    ToAccount = trx.transaction.script.receiver,
-                    Fee = trx.gas_used,
-                    Sequence = trx.transaction.sequence_number
-                };
 
-                return Json(transaction);
+                    var transaction = new Models.Transaction()
+                    {
+                        Id = trx.version,
+                        Amount = trx.transaction.script.amount,
+                        FromAccount = dto.address,
+                        ToAccount = trx.transaction.script.receiver,
+                        Fee = trx.gas_used,
+                        Sequence = trx.transaction.sequence_number
+                    };
+
+                    return Json(transaction);
+                }
+                else
+                {
+                    return Json(new object());
+
+                }
             }
             catch (Exception ex)
             {
@@ -161,11 +180,13 @@ namespace Blockcoli.Libra.Net.Api.Controllers
         {
             try
             {
-                wallet = new LibraWallet(dto.Mnemonic);
-                var acc = wallet.NewAccount();
+                //wallet = new LibraWallet(dto.Mnemonic);
+                //var account = wallet.NewAccount();
+                //var ky = "9bbce791bbcfd8f7bdd459429c33f4a75e9911e5e2812667a5d5dd3a1404f80d".FromHexToBytes();
+                //var account = Account.FromSecretKey(ky);
 
-
-                var trx = await client.TransferCoins(acc, dto.receiverAddress, dto.amount, dto.currency);
+                SwissKnifeHelper swissKnife = new SwissKnifeHelper(env.ContentRootPath);
+                var trx = await client.SendCoins(swissKnife, dto.Address, dto.PublicKey, dto.PrivateKey, dto.receiverAddress, dto.amount, dto.currency);
 
                 return Content(trx, "Application/json");
             }
@@ -179,6 +200,7 @@ namespace Blockcoli.Libra.Net.Api.Controllers
     }
 
 
+
     public class WordsDto
     {
         public string words { get; set; }
@@ -190,11 +212,13 @@ namespace Blockcoli.Libra.Net.Api.Controllers
     }
     public class SubmitDto
     {
-        public string Mnemonic { get; set; }
+        public string Address { get; set; }
+        public string PrivateKey { get; set; }
+        public string PublicKey { get; set; }
+
         public string receiverAddress { get; set; }
         public ulong amount { get; set; }
         public string currency { get; set; } = "LBR";
-
     }
     public class TransactionInputDto
     {

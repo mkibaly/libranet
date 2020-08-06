@@ -12,6 +12,7 @@ namespace Blockcoli.Libra.Net.Api.Models
         public string Mnemonic { get; set; }
         public ulong Balance { get; set; }
         public ulong Sequence { get; set; }
-
+        public string PrivateKey { get; set; }
+        public string PublicKey { get; set; }
     }
 }

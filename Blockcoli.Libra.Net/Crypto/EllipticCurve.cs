@@ -244,6 +244,8 @@ namespace Blockcoli.Libra.Net.Crypto
             this.secret = Secret;
         }
 
+        public byte[] Secret => this.secret;
+
         /// <summary>
         /// Calculates a private key from a secret.
         /// </summary>

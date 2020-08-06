@@ -14,6 +14,7 @@ using Blockcoli.Libra.Net.Crypto;
 using Blockcoli.Libra.Net.LCS;
 using Blockcoli.Libra.Net.JsonRPC;
 using Newtonsoft.Json;
+using Blockcoli.Libra.Net.SwissKnife;
 
 namespace Blockcoli.Libra.Net.Client
 {
@@ -80,7 +81,7 @@ namespace Blockcoli.Libra.Net.Client
         {
             try
             {
-                //var accountState = await QueryBalance(sender.Address);
+                var accountState = await QueryBalanceAsync(sender.Address);
 
                 //var payloadLCS = new PayloadLCS();
                 //payloadLCS.Code = Convert.FromBase64String(Constant.ProgamBase64Codes.PeerToPeerTxn);
@@ -169,9 +170,80 @@ namespace Blockcoli.Libra.Net.Client
             }
         }
 
+        public async Task<string> SendCoins(SwissKnifeHelper swissKnife, string Address, string PublicKey,
+            string PrivateKey, string receiverAddress, ulong amount, string currency = "LBR", ulong gasUnitPrice = 0,
+            ulong maxGasAmount = 1000000)
+        {
+            // 0 setup
+            //var Address = "df4a1020b04d7ab657c0f62e0d2ce6ba"; 
+            //var Address = sender.Address;
+            //var private_key = "9bbce791bbcfd8f7bdd459429c33f4a75e9911e5e2812667a5d5dd3a1404f80d";
+            //var PrivateKey = sender.KeyPair.Secret.ToHexString();
+            //var public_key = "16ed8117db50307f4e9d5b8c2faaa490b7bc0c7eae7414696994ba62527ec37c";
+            //var PublicKey = sender.PublicKey.ToHexString();
+
+            ulong sequence_number = 0;
+            var accountState = await QueryBalanceAsync(Address);
+            if (accountState != null) sequence_number = accountState.sequence_number;
+
+            // 1 create tnx
+            var tnx = new SwissKnife.Transaction
+            {
+                txn_params = new TxnParams
+                {
+                    sender_address = "0x" + Address,
+                    sequence_number = sequence_number,
+                    max_gas_amount = maxGasAmount,
+                    gas_unit_price = gasUnitPrice,
+                    gas_currency_code = currency,
+                    chain_id = "2",
+                    expiration_timestamp_secs = (ulong)Math.Floor((decimal)DateTimeOffset.Now.ToUnixTimeMilliseconds() / 1000) + 1000
+                },
+                script_params = new ScriptParams
+                {
+                    peer_to_peer_transfer = new PeerToPeerTransfer
+                    {
+                        coin_tag = currency,
+                        recipient_address = "0x" + receiverAddress,
+                        amount = amount,
+                        metadata_hex_encoded = "",
+                        metadata_signature_hex_encoded = ""
+                    }
+                }
+            };
+            // 2 generate raw tnx
+            var raw_tnx = swissKnife.GenerateRawTxn(tnx);
+
+            // 3 generate signature
+            var sign = swissKnife.SignTransaction(new RawTxn
+            {
+                raw_txn = raw_tnx.raw_txn,
+                private_key = PrivateKey
+            });
+
+            // 4 generate signed tnx
+            RawTxn signed = swissKnife.GenerateSignedTxn(new RawTxn
+            {
+                raw_txn = raw_tnx.raw_txn,
+                signature = sign.signature,
+                public_key = PublicKey
+            });
+
+            // 5 send tnx to netwrok
+            var response = await rpcClient.CallAsync("submit", signed.signed_txn);
+
+            // 6 return results
+            return response;
+        }
+
         public async Task<AccountTransactions> GetAccountTransaction(string address, ulong sequence, bool include_events = false)
         {
             var jsonResponse = await rpcClient.CallAsync("get_account_transaction", address, sequence, include_events);
+            if (jsonResponse.StartsWith("<"))
+            {
+                return null;
+            }
+
             AccountTransactionsRoot jsonRpc = JsonConvert.DeserializeObject<AccountTransactionsRoot>(jsonResponse);
 
             return jsonRpc.result;

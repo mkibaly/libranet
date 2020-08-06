@@ -1,59 +1,76 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Blockcoli.Libra.Net.SwissKnife
 {
-    public class SwissKnife
+    public class SwissKnifeHelper
     {
+        private readonly string contentRootPath;
+        private readonly JsonSerializerSettings settings;
 
-//        public GenerateRawTxnResponse generate_raw_txn( GenerateRawTxnRequest g) {
-//    var script = match g.script_params {
-//                Preburn MoveScriptParams { coin_tag, amount
-//    } => {
-//            var coin_tag = helpers::coin_tag_parser(&coin_tag);
-//    transaction_builder::encode_preburn_script(coin_tag, amount)
-//}
-//MoveScriptParams::PeerToPeerTransfer {
-//            coin_tag,
-//            recipient_address,
-//            amount,
-//            metadata_hex_encoded,
-//            metadata_signature_hex_encoded,
-//        } => {
-//            var coin_tag = helpers::coin_tag_parser(&coin_tag);
-//var recipient_address = helpers::account_address_parser(&recipient_address);
-//transaction_builder::encode_transfer_with_metadata_script(
-//    coin_tag,
-//    recipient_address,
-//    amount,
-//    helpers::hex_decode(&metadata_hex_encoded),
-//                helpers::hex_decode(&metadata_signature_hex_encoded),
-//            )
-//        }
-//    };
-//    var raw_txn =  new RawTransaction(
-//        helpers::account_address_parser(&g.txn_params.sender_address),
-//        g.txn_params.sequence_number,
-//        TransactionPayload::Script(script),
-//        g.txn_params.max_gas_amount,
-//        g.txn_params.gas_unit_price,
-//        g.txn_params.gas_currency_code,
-//        std::time::Duration::new(g.txn_params.expiration_timestamp, 0),
-//    );
-//    return new GenerateRawTxnResponse {
-//        raw_txn: hex.encode(
-//            lcs.to_bytes(&raw_txn)
-//                .map_err(|err| {
-//    helpers::exit_with_error(format!(
-//        "lcs serialization failure of raw_txn : {}",
-//        err
-//    ))
-//                })
-//                .unwrap(),
-//        ),
-//    }
-//}
+        public SwissKnifeHelper(string ContentRootPath)
+        {
+            contentRootPath = ContentRootPath;
+            settings = new JsonSerializerSettings();
+            settings.NullValueHandling = NullValueHandling.Ignore;
+        }
+
+        public SwissAccount GenerateTestEd25519Keypair()
+        {
+            var jsonResponse =this.exec("generate-test-ed25519-keypair");
+            SiwssKinfeResponse<SwissAccount> rawTxn = JsonConvert.DeserializeObject<SiwssKinfeResponse<SwissAccount>>(jsonResponse);
+
+            return rawTxn.data;
+        }
+
+        public RawTxn GenerateRawTxn(Transaction transaction)
+        {
+            var json = JsonConvert.SerializeObject(transaction, settings);
+            var jsonResponse = this.exec($"generate-raw-txn ", json);
+            SiwssKinfeResponse<RawTxn> rawTxn = JsonConvert.DeserializeObject<SiwssKinfeResponse<RawTxn>>(jsonResponse);
+
+            return rawTxn.data;
+        }
+
+        public RawTxn SignTransaction(RawTxn rawTxn)
+        {
+            var json = JsonConvert.SerializeObject(rawTxn, settings);
+            var jsonResponse = this.exec($"sign-transaction-using-ed25519", json);
+            return JsonConvert.DeserializeObject<SiwssKinfeResponse<RawTxn>>(jsonResponse).data;
+        }
+
+        public RawTxn GenerateSignedTxn(RawTxn rawTxn)
+        {
+            var json = JsonConvert.SerializeObject(rawTxn, settings);
+            var jsonResponse = this.exec($"generate-signed-txn", json);
+            return JsonConvert.DeserializeObject<SiwssKinfeResponse<RawTxn>>(jsonResponse).data;
+        }
+
+        public string exec(string args, string input = null)
+        {
+            System.Diagnostics.Process si = new System.Diagnostics.Process();
+            si.StartInfo.WorkingDirectory = contentRootPath + "/wwwroot";
+            si.StartInfo.UseShellExecute = false;
+            si.StartInfo.FileName = "cmd.exe";
+            si.StartInfo.Arguments = $"/c swiss-knife {args}";
+            si.StartInfo.CreateNoWindow = true;
+            si.StartInfo.RedirectStandardInput = true;
+            si.StartInfo.RedirectStandardOutput = true;
+            si.StartInfo.RedirectStandardError = true;
+            si.Start();
+            if (!string.IsNullOrEmpty(input))
+            {
+                System.IO.StreamWriter sw = si.StandardInput;
+                sw.WriteLine(input);
+                sw.Close();
+            }
+            string output = si.StandardOutput.ReadToEnd();
+            si.Close();
+
+            return output;
+        }
 
     }
 }
